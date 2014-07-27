@@ -18,7 +18,6 @@ import android.nfc.Tag;
 import android.nfc.tech.Ndef;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -26,26 +25,24 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-//	For additional reference. Please refer here
-//	http://developer.android.com/guide/topics/connectivity/nfc/nfc.html
 public class MainActivity extends Activity {
 
 	private final String SPLITTER_STRING = "###";
-
 	private final CharSequence STRING_EMPTY = "";
 	
-	private TextView _txtHint = null;
-	private EditText _etFirstName = null;
-	private EditText _etLastName = null;
-	private NfcAdapter _nfcAdapter = null;
-	
-	private  enum Mode{
+	private enum Mode{
 		READ,
 		WRITE,
 		NONE
 	};
 	
-	private Mode _mode = Mode.NONE;
+	private TextView mlblHint = null;
+	private EditText metFirstName = null;
+	private EditText metLastName = null;
+	
+	private NfcAdapter mNFCAdapter = null;
+		
+	private Mode mMode = Mode.NONE;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -60,22 +57,22 @@ public class MainActivity extends Activity {
 			return;
 		}
 		
-		_txtHint = (TextView) findViewById(R.id.txtHint);
-		_etFirstName = (EditText) findViewById(R.id.etFirstName);
-		_etLastName = (EditText) findViewById(R.id.etLastName);
+		mlblHint = (TextView) findViewById(R.id.txtHint);
+		metFirstName = (EditText) findViewById(R.id.etFirstName);
+		metLastName = (EditText) findViewById(R.id.etLastName);
 		
-		_txtHint.setText(R.string.read_write);
+		mlblHint.setText(R.string.read_write);
 		clear();
 		setInputControlEnabled(false);
 		
 		Intent intent = getIntent();
 		if(NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction()))
 		{
+			mlblHint.setText(R.string.read_tag);
 			if(!readNFCTag(intent))
 			{
 				Toast.makeText(this, "Unable to Read Tag", Toast.LENGTH_LONG).show();
 			}
-			_txtHint.setText(R.string.read_tag);
 		}
 		
 		Log.i("MainActivity", "onCreate");
@@ -93,7 +90,6 @@ public class MainActivity extends Activity {
 		
 		Log.i("MainActivity", "onResume");
 		setForegroundDisptach( );	
-//		setForegroundDisptachWithIntentFilters();
 	}
 	
 	@Override
@@ -101,23 +97,23 @@ public class MainActivity extends Activity {
 	
 		switch (item.getItemId()) {
 			case R.id.item_clear:
-				_mode = Mode.NONE;
-				_txtHint.setText(R.string.read_write);
-				Log.i("MainActivity", "item_clear");
+				mMode = Mode.NONE;
+				mlblHint.setText(R.string.read_write);
 				clear();
+				Log.i("MainActivity", "item_clear");
 				break;
 		
 			case R.id.item_read:
-				_mode = Mode.READ;
-				_txtHint.setText(R.string.read_tag);
+				mMode = Mode.READ;
+				mlblHint.setText(R.string.read_tag);
 				clear();
 				setInputControlEnabled(false);
 				Log.i("MainActivity", "item_read");
 				
 				break;
 			case R.id.item_write:
-				_mode = Mode.WRITE;
-				_txtHint.setText(R.string.write_tag);
+				mMode = Mode.WRITE;
+				mlblHint.setText(R.string.write_tag);
 				setInputControlEnabled(true);
 				Log.i("MainActivity", "item_write");
 				break;
@@ -130,22 +126,24 @@ public class MainActivity extends Activity {
 	protected void onNewIntent(Intent intent) {
 		Log.i("MainActivity", "onNewIntent");
 	
-		switch (_mode) {
+		switch (mMode) {
 			case READ:
 				boolean isNDEF_TECH_TAG = false;
 				String action = intent.getAction();
 				
-				//Based on the documentation it is arranged by Priority, 
+				//Based on the Google documentation, arrangement is based on the intents priority. 
 				//NDEF, TECH, TAG
 				if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
 					Log.i("MainActivity","ACTION_NDEF_DISCOVERED");
 					isNDEF_TECH_TAG = true;
 				}
+				//Unused as of the moment since always write in NDEF format
 				else if(NfcAdapter.ACTION_TECH_DISCOVERED.equals(action))
 				{
 					Log.i("MainActivity","ACTION_TECH_DISCOVERED");
 					isNDEF_TECH_TAG = true;
 				}
+				//Unused as of the moment since always write in NDEF format
 				else if(NfcAdapter.ACTION_TAG_DISCOVERED.equals(action))
 				{
 					Log.i("MainActivity","ACTION_TAG_DISCOVERED");
@@ -170,9 +168,11 @@ public class MainActivity extends Activity {
 					Toast.makeText(this, "Unable to Write Tag", Toast.LENGTH_LONG).show();
 				}
 				break;
+				
 			case NONE:
 				//Do Nothing
 				break;
+			//No default for this switch, using enum types and the initial value is NONE. 
 		}
 	}
 	
@@ -186,8 +186,8 @@ public class MainActivity extends Activity {
 	//Step 1 in using NFC
 	private boolean nfcInitialization()
 	{
-		_nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-		if (_nfcAdapter == null) {
+		mNFCAdapter = NfcAdapter.getDefaultAdapter(this);
+		if (mNFCAdapter == null) {
 			return false;
 		}
 		return true;
@@ -204,7 +204,7 @@ public class MainActivity extends Activity {
 				intent, 
 				0);
 		
-		_nfcAdapter.enableForegroundDispatch(this,
+		mNFCAdapter.enableForegroundDispatch(this,
 				pendingIntent, null, null);
 	}
 	
@@ -229,25 +229,25 @@ public class MainActivity extends Activity {
 		}
 		
 		IntentFilter[] intentFilters = new IntentFilter[]{intentFilter};
-		_nfcAdapter.enableForegroundDispatch(this,
+		mNFCAdapter.enableForegroundDispatch(this,
 		pendingIntent, intentFilters, null);
 	}
 	
 	private void stopForegroundDispatch()
 	{
-		_nfcAdapter.disableForegroundDispatch(this);
+		mNFCAdapter.disableForegroundDispatch(this);
 	}
 	
 	private void clear()
 	{
-		_etFirstName.setText(STRING_EMPTY);
-		_etLastName.setText(STRING_EMPTY);
+		metFirstName.setText(STRING_EMPTY);
+		metLastName.setText(STRING_EMPTY);
 	}
 	
 	private void setInputControlEnabled(boolean enabled)
 	{
-		_etFirstName.setEnabled(enabled);
-		_etLastName.setEnabled(enabled);
+		metFirstName.setEnabled(enabled);
+		metLastName.setEnabled(enabled);
 	}
 	
 	private boolean writeNFCTag(Intent intent)
@@ -259,9 +259,9 @@ public class MainActivity extends Activity {
 		
 		if (ndef != null) {
 			
-			String fullName = String.format("%s%s%s", _etFirstName.getText(),
+			String fullName = String.format("%s%s%s", metFirstName.getText(),
 					SPLITTER_STRING
-					,_etLastName.getText());
+					,metLastName.getText());
 			NdefRecord textRecord = createMimeMedia(fullName);
 			NdefMessage textMessage = new NdefMessage(new NdefRecord[]{textRecord});
 			
@@ -318,25 +318,6 @@ public class MainActivity extends Activity {
 		Ndef ndef = Ndef.get(detectedTag);
 		
 		if (ndef!= null) {			
-			//Decided to use a AsyncTask
-//			ArrayList<NdefMessage> ndefMessages = new ArrayList<>();
-//			Parcelable[] rawMessages = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
-//			if (rawMessages!= null) {
-//				for (Parcelable rawMessage : rawMessages) {
-//					ndefMessages.add((NdefMessage)rawMessage);
-//				}
-//			}			
-//
-//			ArrayList<String> messages = new ArrayList<String>();
-//			if (ndefMessages.size() > 0) {
-//				for (NdefMessage ndefMessage : ndefMessages) {
-//					for (NdefRecord ndefRecord : ndefMessage.getRecords()) {
-//						messages.add(new String(ndefRecord.getPayload()));
-//					}
-//				}
-//			}
-//			
-//			Toast.makeText(this, messages.get(0), Toast.LENGTH_LONG).show();
 			
 			if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {
 				
@@ -357,8 +338,8 @@ public class MainActivity extends Activity {
 					
 					try {						
 						String[] stringMessages = message.split(SPLITTER_STRING);
-						_etFirstName.setText(stringMessages[0]);
-						_etLastName.setText(stringMessages[1]);
+						metFirstName.setText(stringMessages[0]);
+						metLastName.setText(stringMessages[1]);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -398,3 +379,16 @@ public class MainActivity extends Activity {
 		}
 	}
 }
+
+/* 
+ * Jerome Dulay Bautista
+ * 
+ * Notes:
+ *  1. No source code documentation added yet.
+ *  2. Used Samsung Tectiles
+ * 
+ * References:
+ *  - http://developer.android.com/guide/topics/connectivity/nfc/nfc.html
+ *  - http://www.samsung.com/us/microsite/tectile/
+ *  
+*/

@@ -7,7 +7,7 @@
         android:minSdkVersion="16"
         android:targetSdkVersion="19" />
 
-<!-- This two are the needed requirements add the uses permission and feature -->
+<!-- This two are the needed requirements, add the uses-permission and uses-feature -->
     <uses-permission android:name="android.permission.NFC" />
     <uses-feature
         android:name="android.hardware.nfc"
