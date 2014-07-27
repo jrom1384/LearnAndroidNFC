@@ -1,0 +1,11 @@
+<resources>
+
+    <string name="app_name">Learn NFC</string>
+    <string name="read_tag">Read Tag</string>
+    <string name="write_tag">Write Tag</string>
+    <string name="first_name">First Name :</string>
+    <string name="last_name">Last Name :</string>
+    <string name="clear">Clear</string>
+	<string name="read_write">Select an Option (Read/Write)</string>
+
+</resources>
